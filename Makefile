@@ -1,25 +1,40 @@
 
 # ----------------------------------------------------------------------
-# adjust the following to the location of your Lua include file
+# Use environment variables to override the default options:
+#      CC, LUA, CFLAGS, FPIC, LUA_CFLAGS, LDFLAGS
+#  for example: CC=mips-linux-gcc LUA_LIB=lua5.2 make
 
-INCFLAGS= -I../lua/include
 
+LUA ?= lua5.1
+LUA_CFLAGS ?= -I/usr/include/$(LUA)
+LUA_LIB ?= m -L/usr/local/lib -l$(LUA)
 # ----------------------------------------------------------------------
 
-CC= gcc
-AR= ar
+CC ?= gcc
+FPIC ?= -fPIC
+CFLAGS ?= -Os
 
-CFLAGS= -Os -fPIC $(INCFLAGS) 
-LDFLAGS= -fPIC
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	LDFLAGS += -bundle -undefined dynamic_lookup
+endif
 
-LUATWEETNACL_O= luatweetnacl.o randombytes.o tweetnacl.o
+OBJS= luatweetnacl.o randombytes.o tweetnacl.o
 
-tweetnacl.so:  *.c *.h
-	$(CC) -c $(CFLAGS) *.c
-	$(CC) -shared $(LDFLAGS) -o luatweetnacl.so $(LUATWEETNACL_O)
+%.o: src/%.c
+	$(CC) $(LUA_CFLAGS) $(CFLAGS) $(LDFLAGS) $(FPIC) -c -o $@ $<
+
+compile: $(OBJS)
+	$(CC) -shared $(FPIC) -o luatweetnacl.so -l$(LUA_LIB) $(OBJS)
+
+test: compile
+	$(LUA) src/smoketest.lua
 
 clean:
 	rm -f *.o *.a *.so
 
-.PHONY: clean
+install: compile
+	mkdir -p $(DESTDIR)
+	cp -pR *.so $(DESTDIR)/
 
+.PHONY: clean 
