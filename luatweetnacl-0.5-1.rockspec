@@ -22,7 +22,7 @@ dependencies = {
 build = {
    type = "builtin",
    modules = {
-      luatweetnacl = {"luatweetnacl.c", "tweetnacl.c", "randombytes.c"},
+      luatweetnacl = {"src/luatweetnacl.c", "src/tweetnacl.c", "src/randombytes.c"},
    }
    -- copy_directories = { "doc", "test" }
 }
